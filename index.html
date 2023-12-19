@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Generator</title>
+  <link href='https://fonts.googleapis.com/css?family=Bebas Neue' rel='stylesheet'>
+  <style>
+    /* Add some basic styling */
+    body {
+      font-family: 'Bebas Neue';
+      font-weight: 100;
+      text-align: center;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image Generator</h1>
+
+  <form id="imageForm">
+    <label for="imageInput" style="font-size: 30px;">Upload Image:</label>
+    <input type="file" id="imageInput" accept="image/*" required>
+
+    <label for="jsonData">Enter JSON Data:</label>
+    <textarea style="width: 500px;height: 300px;" id="jsonData" rows="4" required></textarea>
+
+    <button style="width: 150px;height: 50px;" type="button" onclick="generateImages()">Generate Images</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    function generateImages() {
+      // Get the uploaded image and JSON data
+      const imageInput = document.getElementById('imageInput');
+      const jsonDataInput = document.getElementById('jsonData');
+      const resultDiv = document.getElementById('result');
+
+      const imageFile = imageInput.files[0];
+      const jsonData = JSON.parse(jsonDataInput.value);
+
+      // Create a FileReader to read the image file
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const img = new Image();
+        img.src = e.target.result;
+
+        // Wrap the image loading in a promise
+        const imagePromise = new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        imagePromise.then(() => {
+          // Loop through the JSON data and replace text on the image
+          jsonData.forEach(data => {
+            // Adjust the coordinates based on your image
+            const x = data.x || 900; // default x coordinate is 10
+            const y = data.y || 470; // default y coordinate is 30
+
+            // Create a new canvas for each image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas dimensions to match the image
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Draw the image on the canvas
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Set font and color
+            ctx.font = '60px Bebas Neue'; // Anton font, 40px size
+            ctx.fillStyle = '#950c0a'; // #950c0a color
+
+            // Draw text on the canvas
+            ctx.fillText(data.name, x, y); // 
+            ctx.font = '140px Bebas Neue'
+            ctx.fillText(`${data.bus_no}`, x + 915, y - 110); // Bus Number
+            ctx.font = '60px Bebas Neue'
+            ctx.fillText(`${data.leader} - ${data.contact}`, x, y + 95); // Leader and Contact
+
+            // Convert the canvas to data URL
+            const imageDataURL = canvas.toDataURL('image/jpeg');
+
+            // Create a link for download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imageDataURL;
+            downloadLink.download = `Bus No ${data.bus_no} : ${data.name} Boarding Pass.jpeg`;
+
+            // Trigger automatic download
+            downloadLink.click();
+          });
+        });
+      };
+
+      // Read the image file as data URL
+      reader.readAsDataURL(imageFile);
+    }
+  </script>
+</body>
+</html>
