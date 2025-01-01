@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPYM BUS BOARDING PASS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 100;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .preview-image {
+            margin: 20px;
+            border: 2px solid #00649C;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HPYM BUS BOARDING PASS</h1>
+
+    <form id="imageForm">
+        <label for="excelInput" style="font-size: 30px;">Upload Excel/CSV:</label>
+        <input type="file" id="excelInput" accept=".xlsx, .csv" required>
+
+        <button style="width: 150px;height: 50px;" type="button" onclick="generateImages()">Generate Images</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script>
+        function generateImages() {
+            // Get the uploaded Excel/CSV file
+            const excelInput = document.getElementById('excelInput');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // Clear previous results
+
+            const excelFile = excelInput.files[0];
+
+            // Check if a file is selected
+            if (!excelFile) {
+                alert('Please upload an Excel/CSV file.');
+                return;
+            }
+
+            // Create a FileReader to read the Excel/CSV file
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                // Parse the Excel/CSV data into JSON using SheetJS
+                const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                // Call the function to generate images with the JSON data
+                generateImagesWithData(jsonData);
+            };
+
+            // Read the Excel/CSV file as binary data
+            reader.readAsBinaryString(excelFile);
+        }
+
+        function generateImagesWithData(jsonData) {
+            // Use a static image
+            const img = new Image();
+            img.src = 'hpymBusImage.jpg';
+
+            // Wrap the image loading in a promise
+            const imagePromise = new Promise((resolve) => {
+                img.onload = resolve;
+            });
+
+            imagePromise.then(() => {
+                // Loop through the JSON data and replace text on the image
+                jsonData.forEach(data => {
+                    // Adjust the coordinates based on your image
+                    const x = data.x || 120; // default x coordinate is 900
+                    const y = data.y || 1210; // default y coordinate is 470
+
+                    // Create a new canvas for each image
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Set canvas dimensions to match the image
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // Draw the static image on the canvas
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Set font and color
+                    ctx.font = 'bold 60px "Manrope"'; // Manrope font, 60px size
+                    ctx.fillStyle = '#00649C'; // #950c0a color
+
+                    // Draw text on the canvas
+                    ctx.fillText(data.Name.toUpperCase(), x, y); // Name
+                    ctx.font = 'bold 140px "Manrope"';
+                    if (data["Bus No"] <= 9) {
+                        ctx.fillText(`0${data["Bus No"]}`, x + 1050, y + 50); // Add a leading 0 if Bus No is <= 9
+                    } else if (data["Bus No"] > 9) {
+                        ctx.fillText(`${data["Bus No"]}`, x + 1060, y + 50); // No leading 0 if Bus No > 9
+                    }
+                    // Bus Number
+                    ctx.font = 'bold 60px "Manrope"';
+                    ctx.fillText(`${data["Bus Captain"].toUpperCase()} - ${data.Contact}`, x, y + 185); // Bus Captain and Contact
+
+                    // Convert the canvas to data URL
+                    const imageDataURL = canvas.toDataURL('image/jpeg');
+
+                    // Create a preview image element
+                    const previewImage = new Image();
+                    previewImage.src = imageDataURL;
+                    previewImage.classList.add('preview-image');
+                    previewImage.width = canvas.width / 4; // Scale down the preview
+                    previewImage.height = canvas.height / 4;
+
+                    // Append the preview image to the resultDiv for display
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.appendChild(previewImage);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
